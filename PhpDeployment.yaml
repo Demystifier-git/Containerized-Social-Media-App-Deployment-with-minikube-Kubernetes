@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: php
+  template:
+    metadata:
+      labels:
+        app: php
+    spec:
+      containers:
+      - name: php
+        image: demystifier803/app1-php:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ME_CONFIG_MYSQLHOST
+          valueFrom:
+            secretKeyRef:
+              name: mysqldb-secret
+              key: mysql-root-host
+        - name: ME_CONFIG_MYSQL_ADMINUSERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysqldb-secret
+              key: mysql-root-username
+        - name: ME_CONFIG_MYSQL_ADMINPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysqldb-secret
+              key: mysql-root-password          
+        - name: ME_CONFIG_MONGODB_SERVER
+          valueFrom:
+            configMapKeyRef:
+              name: php-configmap
+              key: php-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-service
+spec:
+  selector:
+    app: php
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30000
+  type: LoadBalancer
