@@ -69,35 +69,10 @@ kubectl apply -f k8s/services.yaml
 minikube service php-service --url
 Use the URL shown to access the app.
 
-📡 Monitoring Setup
-6. Deploy Prometheus
-
-kubectl apply -f k8s/prometheus-deployment.yaml
-Access:
-
-minikube service prometheus-service
-7. Deploy Grafana
-
-kubectl apply -f k8s/grafana-deployment.yaml
-Default credentials:
 
 User: admin
 
 Password: admin (or from Secret)
-
-Access Grafana:
-
-minikube service grafana-service
-Add Prometheus as a data source in Grafana UI (http://prometheus-service:9090).
-
-8. Deploy Datadog Agent (Optional - Requires API Key)
-Create a secret for Datadog API key:
-
-kubectl create secret generic datadog-secret --from-literal=api-key='<YOUR_DATADOG_API_KEY>'
-Then deploy:
-
-kubectl apply -f k8s/datadog-daemonset.yaml
-Monitor your cluster on Datadog.
 
 🗃️ Database Initialization:
 use flyway job to migrate the db script,
