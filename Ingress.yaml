@@ -19,7 +19,4 @@ spec:
             name: php-service
             port:
               number: 80
-  tls:
-  - hosts:
-    - delightdavid.org.ng
-    secretName: delightdavid-tls  # Must be pre-created with cert-manager or manually
+  

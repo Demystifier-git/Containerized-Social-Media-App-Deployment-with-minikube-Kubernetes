@@ -4,7 +4,7 @@ metadata:
   name: mysql
 spec:
   serviceName: "mysql"
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
@@ -15,34 +15,50 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: demystifier803/mysql:8.0
+          image: demystifier803/social10-mysql
           ports:
             - containerPort: 3306
               name: mysql
           env:
-            - name: MYSQL_ROOTPASSWORD
+            - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-rootpassword
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-user
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-password      
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-database
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "mysqladmin ping -h 127.0.0.1 -u $MYSQL_USER -p$MYSQL_PASSWORD"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 5
           volumeMounts:
             - name: mysql-persistent-storage
               mountPath: /var/lib/mysql
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-sql
+          configMap:
+            name: flyway-sql-config
   volumeClaimTemplates:
     - metadata:
         name: mysql-persistent-storage
@@ -51,3 +67,5 @@ spec:
         resources:
           requests:
             storage: 5Gi
+
+                                  

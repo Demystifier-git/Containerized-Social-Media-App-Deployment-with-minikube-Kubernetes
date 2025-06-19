@@ -5,7 +5,7 @@ metadata:
   labels:
     app: php-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: php-app
@@ -16,27 +16,55 @@ spec:
     spec:
       containers:
         - name: php-app
-          image: demystifier803/app1-php:latest
+          image: demystifier803/social12-php:latest
           ports:
             - containerPort: 80
           env:
             - name: MYSQL_HOST
-              value: "mysql"
+              value: "mysql-access"
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-user
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-password
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: mysqldb-secret
                   key: mysql-database
+
+          # Ensure app is healthy before receiving traffic
+          readinessProbe:
+            exec:
+              command:
+                [
+                  "php", "-r",
+                  "new mysqli(getenv('MYSQL_HOST'), getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), getenv('MYSQL_DATABASE'));"
+                ]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Ensure container does not start until MySQL is reachable
+          startupProbe:
+            exec:
+              command:
+                [
+                  "php", "-r",
+                  "new mysqli(getenv('MYSQL_HOST'), getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), getenv('MYSQL_DATABASE'));"
+                ]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30  # ~5 minutes
+
+
 ---
 apiVersion: v1
 kind: Service
@@ -44,10 +72,10 @@ metadata:
   name: php-service
 spec:
   selector:
-    app: php
+    app: php-app
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 80
-    nodePort: 30000
-  type: Nodeport
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30000
+  type: NodePort
